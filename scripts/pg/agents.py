@@ -1,8 +1,8 @@
 from copy import deepcopy
 import numpy as np
-from safe_rl.utils.mpi_tools import mpi_avg
-from safe_rl.pg.utils import EPS
-import safe_rl.pg.trust_region as tro
+from utils.mpi_tools import mpi_avg
+from pg.utils import EPS
+import pg.trust_region as tro
 
 class Agent:
 

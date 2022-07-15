@@ -1,70 +1,88 @@
 import numpy as np
-import tensorflow as tf
+# import tensorflow as tf
+import tensorflow.compat.v1 as tf
+tf.disable_v2_behavior() 
 from gym.spaces import Box, Discrete
-from safe_rl.pg.utils import combined_shape, EPS
+from pg.utils import combined_shape, EPS
 
 
 """
 Network utils
 """
 
+
 def placeholder(dim=None):
-    return tf.placeholder(dtype=tf.float32, shape=combined_shape(None,dim))
+    return tf.placeholder(dtype=tf.float32, shape=combined_shape(None, dim))
+
 
 def placeholders(*args):
     return [placeholder(dim) for dim in args]
+
 
 def placeholder_from_space(space):
     if isinstance(space, Box):
         return placeholder(space.shape)
     elif isinstance(space, Discrete):
         return tf.placeholder(dtype=tf.int32, shape=(None,))
-    raise NotImplementedError('bad space {}'.format(space))
+    raise NotImplementedError("bad space {}".format(space))
+
 
 def placeholders_from_spaces(*args):
     return [placeholder_from_space(space) for space in args]
+
 
 def mlp(x, hidden_sizes=(32,), activation=tf.tanh, output_activation=None):
     for h in hidden_sizes[:-1]:
         x = tf.layers.dense(x, units=h, activation=activation)
     return tf.layers.dense(x, units=hidden_sizes[-1], activation=output_activation)
 
-def get_vars(scope=''):
+
+def get_vars(scope=""):
     return [x for x in tf.trainable_variables() if scope in x.name]
 
-def count_vars(scope=''):
+
+def count_vars(scope=""):
     v = get_vars(scope)
     return sum([np.prod(var.shape.as_list()) for var in v])
+
 
 """
 Gaussian distributions
 """
 
+
 def gaussian_likelihood(x, mu, log_std):
-    pre_sum = -0.5 * (((x-mu)/(tf.exp(log_std)+EPS))**2 + 2*log_std + np.log(2*np.pi))
+    pre_sum = -0.5 * (
+        ((x - mu) / (tf.exp(log_std) + EPS)) ** 2 + 2 * log_std + np.log(2 * np.pi)
+    )
     return tf.reduce_sum(pre_sum, axis=1)
+
 
 def gaussian_kl(mu0, log_std0, mu1, log_std1):
     """Returns average kl divergence between two batches of dists"""
     var0, var1 = tf.exp(2 * log_std0), tf.exp(2 * log_std1)
-    pre_sum = 0.5*(((mu1- mu0)**2 + var0)/(var1 + EPS) - 1) +  log_std1 - log_std0
+    pre_sum = 0.5 * (((mu1 - mu0) ** 2 + var0) / (var1 + EPS) - 1) + log_std1 - log_std0
     all_kls = tf.reduce_sum(pre_sum, axis=1)
     return tf.reduce_mean(all_kls)
 
+
 def gaussian_entropy(log_std):
     """Returns average entropy over a batch of dists"""
-    pre_sum = log_std + 0.5 * np.log(2*np.pi*np.e)
+    pre_sum = log_std + 0.5 * np.log(2 * np.pi * np.e)
     all_ents = tf.reduce_sum(pre_sum, axis=-1)
     return tf.reduce_mean(all_ents)
+
 
 """
 Categorical distributions
 """
 
+
 def categorical_kl(logp0, logp1):
     """Returns average kl divergence between two batches of dists"""
     all_kls = tf.reduce_sum(tf.exp(logp1) * (logp1 - logp0), axis=1)
     return tf.reduce_mean(all_kls)
+
 
 def categorical_entropy(logp):
     """Returns average entropy over a batch of dists"""
@@ -76,11 +94,14 @@ def categorical_entropy(logp):
 Policies
 """
 
-def mlp_categorical_policy(x, a, hidden_sizes, activation, output_activation, action_space):
+
+def mlp_categorical_policy(
+    x, a, hidden_sizes, activation, output_activation, action_space
+):
     act_dim = action_space.n
-    logits = mlp(x, list(hidden_sizes)+[act_dim], activation, None)
+    logits = mlp(x, list(hidden_sizes) + [act_dim], activation, None)
     logp_all = tf.nn.log_softmax(logits)
-    pi = tf.squeeze(tf.multinomial(logits,1), axis=1)
+    pi = tf.squeeze(tf.multinomial(logits, 1), axis=1)
     logp = tf.reduce_sum(tf.one_hot(a, depth=act_dim) * logp_all, axis=1)
     logp_pi = tf.reduce_sum(tf.one_hot(pi, depth=act_dim) * logp_all, axis=1)
 
@@ -88,16 +109,20 @@ def mlp_categorical_policy(x, a, hidden_sizes, activation, output_activation, ac
     d_kl = categorical_kl(logp_all, old_logp_all)
     ent = categorical_entropy(logp_all)
 
-    pi_info = {'logp_all': logp_all}
-    pi_info_phs = {'logp_all': old_logp_all}
+    pi_info = {"logp_all": logp_all}
+    pi_info_phs = {"logp_all": old_logp_all}
 
     return pi, logp, logp_pi, pi_info, pi_info_phs, d_kl, ent
 
 
-def mlp_gaussian_policy(x, a, hidden_sizes, activation, output_activation, action_space):
+def mlp_gaussian_policy(
+    x, a, hidden_sizes, activation, output_activation, action_space
+):
     act_dim = a.shape.as_list()[-1]
-    mu = mlp(x, list(hidden_sizes)+[act_dim], activation, output_activation)
-    log_std = tf.get_variable(name='log_std', initializer=-0.5*np.ones(act_dim, dtype=np.float32))
+    mu = mlp(x, list(hidden_sizes) + [act_dim], activation, output_activation)
+    log_std = tf.get_variable(
+        name="log_std", initializer=-0.5 * np.ones(act_dim, dtype=np.float32)
+    )
     std = tf.exp(log_std)
     pi = mu + tf.random_normal(tf.shape(mu)) * std
     logp = gaussian_likelihood(a, mu, log_std)
@@ -107,8 +132,8 @@ def mlp_gaussian_policy(x, a, hidden_sizes, activation, output_activation, actio
     d_kl = gaussian_kl(mu, log_std, old_mu_ph, old_log_std_ph)
     ent = gaussian_entropy(log_std)
 
-    pi_info = {'mu': mu, 'log_std': log_std}
-    pi_info_phs = {'mu': old_mu_ph, 'log_std': old_log_std_ph}
+    pi_info = {"mu": mu, "log_std": log_std}
+    pi_info_phs = {"mu": old_mu_ph, "log_std": old_log_std_ph}
 
     return pi, logp, logp_pi, pi_info, pi_info_phs, d_kl, ent
 
@@ -116,7 +141,10 @@ def mlp_gaussian_policy(x, a, hidden_sizes, activation, output_activation, actio
 LOG_STD_MAX = 2
 LOG_STD_MIN = -20
 
-def mlp_squashed_gaussian_policy(x, a, hidden_sizes, activation, output_activation, action_space):
+
+def mlp_squashed_gaussian_policy(
+    x, a, hidden_sizes, activation, output_activation, action_space
+):
     """
     Experimental code for squashed gaussian policies, not yet tested
     """
@@ -131,12 +159,16 @@ def mlp_squashed_gaussian_policy(x, a, hidden_sizes, activation, output_activati
     pi = tf.tanh(u)
 
     old_mu_ph, old_log_std_ph, u_ph = placeholders(act_dim, act_dim, act_dim)
-    d_kl = gaussian_kl(mu, log_std, old_mu_ph, old_log_std_ph)  # kl is invariant to squashing transform
+    d_kl = gaussian_kl(
+        mu, log_std, old_mu_ph, old_log_std_ph
+    )  # kl is invariant to squashing transform
 
     def apply_squashing_func(log_prob, raw_action):
         # Adjustment to log prob
         act = tf.tanh(raw_action)
-        log_prob -= tf.reduce_sum(2*(np.log(2) - act - tf.nn.softplus(-2*act)), axis=1)
+        log_prob -= tf.reduce_sum(
+            2 * (np.log(2) - act - tf.nn.softplus(-2 * act)), axis=1
+        )
         return log_prob
 
     # Base log probs
@@ -150,18 +182,26 @@ def mlp_squashed_gaussian_policy(x, a, hidden_sizes, activation, output_activati
     # Approximate entropy
     ent = -tf.reduce_mean(logp_pi)  # approximate! hacky!
 
-    pi_info = {'mu': mu, 'log_std': log_std, 'raw_action': u}
-    pi_info_phs = {'mu': old_mu_ph, 'log_std': old_log_std_ph, 'raw_action': u_ph}
+    pi_info = {"mu": mu, "log_std": log_std, "raw_action": u}
+    pi_info_phs = {"mu": old_mu_ph, "log_std": old_log_std_ph, "raw_action": u_ph}
 
     return pi, logp, logp_pi, pi_info, pi_info_phs, d_kl, ent
-
 
 
 """
 Actor-Critics
 """
-def mlp_actor_critic(x, a, hidden_sizes=(64,64), activation=tf.tanh,
-                     output_activation=None, policy=None, action_space=None):
+
+
+def mlp_actor_critic(
+    x,
+    a,
+    hidden_sizes=(64, 64),
+    activation=tf.tanh,
+    output_activation=None,
+    policy=None,
+    action_space=None,
+):
 
     # default policy builder depends on action space
     if policy is None and isinstance(action_space, Box):
@@ -169,14 +209,16 @@ def mlp_actor_critic(x, a, hidden_sizes=(64,64), activation=tf.tanh,
     elif policy is None and isinstance(action_space, Discrete):
         policy = mlp_categorical_policy
 
-    with tf.variable_scope('pi'):
-        policy_outs = policy(x, a, hidden_sizes, activation, output_activation, action_space)
+    with tf.variable_scope("pi"):
+        policy_outs = policy(
+            x, a, hidden_sizes, activation, output_activation, action_space
+        )
         pi, logp, logp_pi, pi_info, pi_info_phs, d_kl, ent = policy_outs
 
-    with tf.variable_scope('vf'):
-        v = tf.squeeze(mlp(x, list(hidden_sizes)+[1], activation, None), axis=1)
+    with tf.variable_scope("vf"):
+        v = tf.squeeze(mlp(x, list(hidden_sizes) + [1], activation, None), axis=1)
 
-    with tf.variable_scope('vc'):
-        vc = tf.squeeze(mlp(x, list(hidden_sizes)+[1], activation, None), axis=1)
+    with tf.variable_scope("vc"):
+        vc = tf.squeeze(mlp(x, list(hidden_sizes) + [1], activation, None), axis=1)
 
     return pi, logp, logp_pi, pi_info, pi_info_phs, d_kl, ent, v, vc
