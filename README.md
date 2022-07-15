@@ -19,4 +19,4 @@
 | Gradient Norm Clipping | 40  |  |  |
 | Scheduler | cosine  |  |  |
 | Steps in scheduler | 1,000  |  |  |
-| Minimum Learning Rate | 0 |  |  |
+| Constraint probability | 1E-4 |  |  |
