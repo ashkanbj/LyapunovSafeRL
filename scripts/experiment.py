@@ -9,7 +9,7 @@ algo = "ppo"
 task = "goal1"
 robot = "point"
 # set seed for reproducibility
-seed = 0
+seed = 1234
 
 cpu = 1
 
