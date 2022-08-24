@@ -1,8 +1,11 @@
+from copy import deepcopy
+
 import gym
 import safety_gym
-from copy import deepcopy
-from utils.run_utils import setup_logger_kwargs
-from utils.mpi_tools import mpi_fork
+
+from lyapunovrl.utils.gridnavigation import GridNavigationEnv
+from lyapunovrl.utils.mpi_tools import mpi_fork
+from lyapunovrl.utils.run_utils import setup_logger_kwargs
 
 # defining the algorithm, task, and robot
 algo = "ppo"
@@ -40,19 +43,19 @@ env_name = "Safexp-" + robot + task + "-v0"
 # Fork for parallelizing
 mpi_fork(cpu)
 
-from pg.algos import ppo
+from lyapunovrl.algos.pg.algos import ppo
 
 # run the algorithm
 ppo(
     env_fn=lambda: gym.make(env_name),
     ac_kwargs=dict(
         hidden_sizes=(256, 256),
-    ),
+    ),  # hidden sizes for the policy and value function: This is different from the spinup implementation
     epochs=epochs,
     steps_per_epoch=steps_per_epoch,
-    save_freq=save_freq,
-    target_kl=target_kl,
-    cost_lim=cost_lim,
+    save_freq=save_freq,    # save frequency: This is not in the spinup implementation
+    target_kl=target_kl,    # target KL divergence: This is not in the spinup implementation
+    cost_lim=cost_lim,    # cost limit: This is not in the spinup implementation
     seed=seed,
     logger_kwargs=logger_kwargs,
 )
