@@ -1,9 +1,13 @@
 # LyapunovSafeRL
 
 ## Installation
-
+- Pytorch 1.12.0
+- OpenAI Gym 0.15.7
+- DMLab
+- MuJoCo
+- OpenAI Safety Gym
 ## Instructions
-
+- Install the dependencies by running `python setup.py install`
 ## Hyperparameters
 | Hyperparameter (Experiments) | Value | Hyperparameter (Transformers) | Value |
 | ----------- | ----------- | ----------- | ----------- |
@@ -26,7 +30,12 @@
 | Constraint probability | 1E-4 |  |  |
 
 ## Running the code
-
+`python lyapunovrl/algos/{algorithm}.py --env <env_name> --exp_name <experiment name>`
 ## Environments
-
-## Notes
+OpenAI Safety Gym: Safexp-{robot}{task}{difficulty}-v0        
+Choose robot from {Point, Car, Doggo}, task from {Goal, Push} and difficulty from {1,2}.
+DMLab-30 (30 levels): dmlab30-{level_name}
+Choose level from {rooms_select_nonmatching_object, rooms_watermaze, explore_obstructed_goals_small, explore_goal_locations_small, explore_object_rewards_few, explore_obstructed_goals_large, explore_goal_locations_large, and explore_object_rewards_many}
+## Results
+To test the learned policy, run `python scripts/test_policy.py <path to saved model>`
+To plot the results, run `python scripts/plot.py <path to saved model>`
