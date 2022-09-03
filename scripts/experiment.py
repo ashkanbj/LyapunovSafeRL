@@ -43,7 +43,7 @@ env_name = "Safexp-" + robot + task + "-v0"
 # Fork for parallelizing
 mpi_fork(cpu)
 
-from lyapunovrl.algos.pg.algos import ppo
+from lyapunovrl.algos import ppo
 
 # run the algorithm
 ppo(

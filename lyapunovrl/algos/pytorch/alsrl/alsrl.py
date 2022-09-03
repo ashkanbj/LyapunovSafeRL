@@ -156,7 +156,7 @@ class PPOBuffer:
         }  # + core.values_as_sorted_list(self.pi_info_bufs)
 
 
-def ppo(
+def alsrl(
     env_fn,
     agent=core.PPOAgent(),
     actor_critic=core.MLPActorCritic,
@@ -650,7 +650,7 @@ if __name__ == "__main__":
     import argparse
 
     parser = argparse.ArgumentParser()
-    parser.add_argument("--agent", type=str, default="ppo")
+    parser.add_argument("--agent", type=str, default="alsrl")
     parser.add_argument("--env", type=str, default="Safexp-PointGoal1-v0")
     parser.add_argument("--hid", type=int, default=64)
     parser.add_argument("--l", type=int, default=2)
@@ -694,12 +694,12 @@ if __name__ == "__main__":
     #     penalty_param_loss=args.penalty_param_loss,
     # )
 
-    if args.agent == "ppo":
+    if args.agent == "alsrl":
         agent = core.PPOAgent(**ppo_kwargs)
     else:
         raise NotImplementedError
 
-    ppo(
+    alsrl(
         lambda: gym.make(args.env),
         agent=agent,
         actor_critic=core.MLPActorCritic,
