@@ -32,10 +32,10 @@
 ## Running the code
 `python lyapunovrl/algos/{algorithm}.py --env <env_name> --exp_name <experiment name>`
 ## Environments
-OpenAI Safety Gym: Safexp-{robot}{task}{difficulty}-v0        
-Choose robot from {Point, Car, Doggo}, task from {Goal, Push} and difficulty from {1,2}.
-DMLab-30 (30 levels): dmlab30-{level_name}
+OpenAI Safety Gym: Safexp-{robot}{task}{difficulty}-v0     
+Choose robot from {Point, Car, Doggo}, task from {Goal, Push} and difficulty from {1,2}.     
+DMLab-30: dmlab-{level_name}     
 Choose level from {rooms_select_nonmatching_object, rooms_watermaze, explore_obstructed_goals_small, explore_goal_locations_small, explore_object_rewards_few, explore_obstructed_goals_large, explore_goal_locations_large, and explore_object_rewards_many}
 ## Results
-To test the learned policy, run `python scripts/test_policy.py <path to saved model>`
-To plot the results, run `python scripts/plot.py <path to saved model>`
+- To test the learned policy, run `python scripts/test_policy.py <path to saved model>`
+- To plot the results, run `python scripts/plot.py <path to saved model>`
