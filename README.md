@@ -30,7 +30,7 @@
 | Constraint probability | 1E-4 |  |  |
 
 ## Running the code
-`python lyapunovrl/algos/pytorch/{algorithm}.py --env <env_name> --exp_name <experiment name>`
+`python lyapunovrl/algos/pytorch/{algorithm}/{algorithm}.py --env <env_name> --exp_name <experiment name>`
 ## Environments
 OpenAI Safety Gym: Safexp-{robot}{task}{difficulty}-v0     
 Choose robot from {Point, Car, Doggo}, task from {Goal, Push} and difficulty from {1,2}.     
